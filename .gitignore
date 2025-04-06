@@ -1,0 +1,55 @@
+# Arquivos de compilação
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Arquivos do IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.idea_modules/
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Dependências do Maven/Gradle
+target/
+build/
+.gradle/
+.mvn/
+mvnw
+mvnw.cmd
+gradlew
+gradlew.bat
+
+# Arquivos de configuração local
+*.properties
+*.prefs
+
+# Arquivos do Eclipse (caso alguém use)
+.settings/
+.classpath
+.project
+bin/
+
+# Arquivos do VSCode (caso alguém use)
+.vscode/
+
+# Arquivos do NetBeans (caso alguém use)
+nbproject/
+nbbuild/
+dist/
