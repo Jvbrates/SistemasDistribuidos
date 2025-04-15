@@ -1,4 +1,6 @@
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -64,6 +66,13 @@ public class ChatClient {
         textPane.setFocusable(false);
         frame.getContentPane().add(new JScrollPane(textPane), BorderLayout.CENTER);
         frame.pack();
+
+        textField.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                out.println(textField.getText());
+                textField.setText("");
+            }
+        });
 
     }
 
