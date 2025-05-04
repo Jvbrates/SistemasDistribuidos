@@ -1,21 +1,22 @@
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
 import java.net.MalformedURLException;
 import java.rmi.NotBoundException;
 import java.util.List;
 
-public class ClientGUI extends JFrame {
+public class ClientGUI extends JFrame implements CallbackDeliverMsg {
     private JTextField messageField;
     private JTextArea chatArea;
     private JButton sendButton;
     private JComboBox<String> roomComboBox;
     private JButton joinRoomButton;
+    private JButton leaveRoomButton;
     private JButton createRoomButton;
+
     private UserChat userChat;
-    private IRoomChat currentRoom;
     private String userName;
 
     public ClientGUI() {
@@ -32,7 +33,7 @@ public class ClientGUI extends JFrame {
 
         try {
             // Conectar ao servidor RMI
-            userChat = new UserChat("rmi://localhost:2020/Servidor");
+            userChat = new UserChat("rmi://localhost:2020/Servidor", userName, this);
         } catch (RemoteException | MalformedURLException | NotBoundException e) {
             JOptionPane.showMessageDialog(this, "Erro ao conectar ao servidor: " + e.getMessage(), 
                                        "Erro de Conexão", JOptionPane.ERROR_MESSAGE);
@@ -64,11 +65,14 @@ public class ClientGUI extends JFrame {
         JPanel roomPanel = new JPanel();
         roomComboBox = new JComboBox<>();
         joinRoomButton = new JButton("Juntar-se à Sala");
+        leaveRoomButton = new JButton("Sair da sala");
         createRoomButton = new JButton("Criar Sala");
         
         roomPanel.add(new JLabel("Salas:"));
         roomPanel.add(roomComboBox);
         roomPanel.add(joinRoomButton);
+        roomPanel.add(leaveRoomButton);
+        leaveRoomButton.setEnabled(false);
         roomPanel.add(createRoomButton);
         
         add(roomPanel, BorderLayout.NORTH);
@@ -78,8 +82,32 @@ public class ClientGUI extends JFrame {
         messageField.addActionListener(e -> sendMessage());
         joinRoomButton.addActionListener(e -> joinRoom());
         createRoomButton.addActionListener(e -> createRoom());
+        leaveRoomButton.addActionListener(e -> leaveRoom());
+        roomComboBox.addPopupMenuListener(new PopupMenuListener() {
+                                              @Override
+                                              public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
 
+                                              }
+
+                                              @Override
+                                              public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                                                  updateRoomsList();
+                                                  updateLeaveButtonCombobox();
+                                              }
+
+                                              @Override
+                                              public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                                                  // Quando fecha
+                                              }
+                                          });
         // Atualizar lista de salas
+        updateRoomsList();
+        updateLeaveButtonCombobox();
+    }
+
+    public void receive(String senderName, String msg){
+        chatArea.append(senderName + ": " + msg + "\n");
+        updateLeaveButtonCombobox();
         updateRoomsList();
     }
 
@@ -100,15 +128,33 @@ public class ClientGUI extends JFrame {
         String selectedRoom = (String) roomComboBox.getSelectedItem();
         if (selectedRoom != null) {
             try {
-                currentRoom = UserChat.joinRoom(selectedRoom);
-                currentRoom.joinRoom(userName, userChat);
-                chatArea.append("Juntou-se a sala: " + selectedRoom + "\n");
+                userChat.joinRoom(selectedRoom);
+                updateLeaveButtonCombobox();
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Erro ao juntar-se à sala: " + e.getMessage(), 
+                JOptionPane.showMessageDialog(this, "Erro ao juntar-se à sala: " + e.getMessage(),
                                            "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
+
+    private void updateLeaveButtonCombobox() {
+        if (userChat.getRoomOpened()){
+            roomComboBox.setEnabled(false);
+            joinRoomButton.setEnabled(false);
+            leaveRoomButton.setEnabled(true);
+        } else {
+            roomComboBox.setEnabled(true);
+            joinRoomButton.setEnabled(roomComboBox.getItemCount() > 0);
+            leaveRoomButton.setEnabled(false);
+        }
+        System.out.println(roomComboBox.getItemCount());
+    }
+
+    private void leaveRoom() {
+        userChat.leave();
+        updateLeaveButtonCombobox();
+    }
+
 
     private void createRoom() {
         String roomName = JOptionPane.showInputDialog(this, "Nome da Sala:");
@@ -116,6 +162,7 @@ public class ClientGUI extends JFrame {
             try {
                 userChat.createRoom(roomName.trim());
                 updateRoomsList();
+                updateLeaveButtonCombobox();
                 chatArea.append("Sala criada: " + roomName + "\n");
             } catch (RemoteException e) {
                 JOptionPane.showMessageDialog(this, "Erro criando a sala: " + e.getMessage(), 
@@ -128,9 +175,8 @@ public class ClientGUI extends JFrame {
         String message = messageField.getText().trim();
         if (!message.isEmpty()) {
             try {
-                if (currentRoom != null) {
-                    currentRoom.sendMsg(userName, message);
-                    chatArea.append(userName + ": " + message + "\n");
+                if (userChat.getRoomOpened()) {
+                    userChat.sendMesage(message);
                 } else {
                     chatArea.append("Sistema: Você não está em nenhuma sala. Junte-se a uma sala.\n");
                 }

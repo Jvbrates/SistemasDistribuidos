@@ -1,7 +1,9 @@
+import java.rmi.RemoteException;
+
 public interface IRoomChat extends java.rmi.Remote {
-    public /*synchronized*/ void sendMsg(String usrName, String msg);
-    public /*synchronized*/ void joinRoom(String userName, IUserChat user);
-    public /*synchronized*/ void leaveRoom(String usrName);
-    public /*synchronized*/ String getRoomName();
-    public void closeRoom();
+    public void sendMsg(String usrName, String msg) throws RemoteException;
+    public void joinRoom(String userName, IUserChat user) throws RemoteException;;
+    public void leaveRoom(String usrName) throws RemoteException;
+    public String getRoomName() throws RemoteException;
+    public void closeRoom() throws RemoteException;
 }
